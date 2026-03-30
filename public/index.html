@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MetaPulse — Ads Analytics & Reporting</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="logo-text">
+          <span class="logo-name">MetaPulse</span>
+          <span class="logo-sub">Ads Analytics</span>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <i class="fa-solid fa-grid-2"></i><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="clients">
+        <i class="fa-solid fa-users"></i><span>Clients</span>
+      </a>
+      <a href="#" class="nav-item" data-page="campaigns">
+        <i class="fa-solid fa-bullhorn"></i><span>Campaigns</span>
+      </a>
+      <a href="#" class="nav-item" data-page="new-campaign">
+        <i class="fa-solid fa-plus-circle"></i><span>New Report</span>
+      </a>
+      <a href="#" class="nav-item" data-page="reports">
+        <i class="fa-solid fa-file-lines"></i><span>Reports</span>
+      </a>
+      <a href="#" class="nav-item admin-only" data-page="users" style="display:none;">
+        <i class="fa-solid fa-user-shield"></i><span>Team</span>
+      </a>
+      <a href="#" class="nav-item admin-only" data-page="activity" style="display:none;">
+        <i class="fa-solid fa-clock-rotate-left"></i><span>Activity Log</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <div class="user-details">
+          <span class="user-name" id="userName">User</span>
+          <span class="user-role" id="userRole">Employee</span>
+        </div>
+        <button class="btn-icon-sm" title="Logout" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" placeholder="Search..." id="globalSearch">
+        </div>
+      </div>
+    </header>
+
+    <div class="page-container">
+
+      <!-- ========== DASHBOARD ========== -->
+      <section class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-users"></i></div><div class="stat-info"><span class="stat-value" id="statClients">0</span><span class="stat-label">Clients</span></div></div>
+          <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-bullhorn"></i></div><div class="stat-info"><span class="stat-value" id="statCampaigns">0</span><span class="stat-label">Campaigns</span></div></div>
+          <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div><div class="stat-info"><span class="stat-value" id="statCompleted">0</span><span class="stat-label">Completed</span></div></div>
+          <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-dollar-sign"></i></div><div class="stat-info"><span class="stat-value" id="statSpent">$0</span><span class="stat-label">Total Spend</span></div></div>
+          <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-eye"></i></div><div class="stat-info"><span class="stat-value" id="statReach">0</span><span class="stat-label">Total Reach</span></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-clock"></i> Recent Campaigns</h3>
+            <button class="btn btn-sm btn-primary" onclick="navigateTo('new-campaign')"><i class="fa-solid fa-plus"></i> New</button>
+          </div>
+          <div class="card-body"><div class="table-responsive">
+            <table class="table"><thead><tr><th>Campaign</th><th>Client</th><th>Platform</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="recentCampaignsTable"><tr><td colspan="5" class="text-center text-muted">No campaigns yet</td></tr></tbody></table>
+          </div></div>
+        </div>
+      </section>
+
+      <!-- ========== CLIENTS ========== -->
+      <section class="page" id="page-clients">
+        <div class="page-header"><h2>Clients</h2><button class="btn btn-primary" onclick="showClientModal()"><i class="fa-solid fa-plus"></i> Add Client</button></div>
+        <div class="card"><div class="card-body"><div class="table-responsive">
+          <table class="table"><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Industry</th><th>Actions</th></tr></thead>
+          <tbody id="clientsTable"><tr><td colspan="5" class="text-center text-muted">No clients yet</td></tr></tbody></table>
+        </div></div></div>
+      </section>
+
+      <!-- ========== CAMPAIGNS ========== -->
+      <section class="page" id="page-campaigns">
+        <div class="page-header"><h2>Campaigns</h2><button class="btn btn-primary" onclick="navigateTo('new-campaign')"><i class="fa-solid fa-plus"></i> New Campaign</button></div>
+        <div class="filter-bar">
+          <select id="filterClient" class="form-select"><option value="">All Clients</option></select>
+          <select id="filterStatus" class="form-select">
+            <option value="">All Statuses</option><option value="draft">Draft</option><option value="pre-boost">Pre-Boost</option><option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="card"><div class="card-body"><div class="table-responsive">
+          <table class="table"><thead><tr><th>Campaign</th><th>Client</th><th>Type</th><th>Objective</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="campaignsTable"><tr><td colspan="6" class="text-center text-muted">No campaigns yet</td></tr></tbody></table>
+        </div></div></div>
+      </section>
+
+      <!-- ========== NEW CAMPAIGN (3-STEP SIMPLIFIED) ========== -->
+      <section class="page" id="page-new-campaign">
+        <div class="page-header"><h2 id="newCampaignTitle">Create New Report</h2></div>
+        <div class="stepper">
+          <div class="step active" data-step="1"><div class="step-circle">1</div><span>Campaign</span></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="2"><div class="step-circle">2</div><span>Metrics</span></div>
+          <div class="step-line"></div>
+          <div class="step" data-step="3"><div class="step-circle">3</div><span>Review</span></div>
+        </div>
+
+        <!-- Step 1: Campaign Info (simplified) -->
+        <div class="step-content active" id="step-1">
+          <div class="card">
+            <div class="card-header"><h3><i class="fa-solid fa-info-circle"></i> Campaign Details</h3></div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label required">Client</label><select id="campaignClient" class="form-select" required><option value="">Select Client</option></select></div>
+                <div class="form-group"><label class="form-label required">Campaign Name</label><input type="text" id="campaignName" class="form-input" placeholder="e.g., Summer Sale Boost" required></div>
+                <div class="form-group"><label class="form-label required">Platform</label>
+                  <select id="campaignPlatform" class="form-select"><option value="Facebook">Facebook</option><option value="Instagram">Instagram</option><option value="Facebook & Instagram">Facebook & Instagram</option></select>
+                </div>
+                <div class="form-group"><label class="form-label required">Ad Type</label>
+                  <select id="campaignAdType" class="form-select" required>
+                    <option value="">Select</option><option value="Boosted Post">Boosted Post</option><option value="Image Ad">Image Ad</option><option value="Video Ad">Video Ad</option><option value="Carousel Ad">Carousel Ad</option><option value="Stories Ad">Stories Ad</option><option value="Reels Ad">Reels Ad</option><option value="Lead Ad">Lead Ad</option><option value="Page Promotion">Page Promotion</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="form-label required">Objective</label>
+                  <select id="campaignObjective" class="form-select" required>
+                    <option value="">Select</option><option value="Awareness">Awareness</option><option value="Traffic">Traffic</option><option value="Engagement">Engagement</option><option value="Leads">Leads</option><option value="Sales">Sales</option><option value="App Promotion">App Promotion</option>
+                  </select>
+                </div>
+                <div class="form-group"><label class="form-label">Date Range</label>
+                  <div class="date-range-row">
+                    <input type="date" id="campaignStartDate" class="form-input">
+                    <span class="date-separator">—</span>
+                    <input type="date" id="campaignEndDate" class="form-input">
+                  </div>
+                </div>
+              </div>
+              <div class="form-group"><label class="form-label">Notes</label><textarea id="campaignNotes" class="form-textarea" rows="2" placeholder="Optional notes..."></textarea></div>
+            </div>
+            <div class="card-footer"><div></div><button class="btn btn-primary" onclick="saveAndNext(1)">Continue <i class="fa-solid fa-arrow-right"></i></button></div>
+          </div>
+        </div>
+
+        <!-- Step 2: Unified Metrics (Before + After in ONE view) -->
+        <div class="step-content" id="step-2">
+          <div class="card">
+            <div class="card-header"><h3><i class="fa-solid fa-chart-bar"></i> Performance Metrics</h3></div>
+            <div class="card-body">
+              <p class="form-hint">Enter the metrics for your campaign. Fill <strong>Before Boost</strong> columns with organic data and <strong>After Boost</strong> with paid results. Leave After empty if boost hasn't run yet.</p>
+
+              <!-- Unified metrics table -->
+              <div class="metrics-input-table">
+                <table class="table metrics-table">
+                  <thead>
+                    <tr><th class="metric-label-col">Metric</th><th class="metric-val-col">Before Boost</th><th class="metric-val-col">After Boost</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr class="section-row"><td colspan="3"><i class="fa-solid fa-eye"></i> Reach & Delivery</td></tr>
+                    <tr><td>Reach <small>Unique people</small></td><td><input type="number" id="preReach" class="form-input" min="0" value="0"></td><td><input type="number" id="postReach" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Impressions <small>Times displayed</small></td><td><input type="number" id="preImpressions" class="form-input" min="0" value="0"></td><td><input type="number" id="postImpressions" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Frequency <small>Avg views/person</small></td><td><input type="number" value="0" class="form-input" disabled></td><td><input type="number" id="postFrequency" class="form-input" min="0" step="0.01" value="0"></td></tr>
+
+                    <tr class="section-row"><td colspan="3"><i class="fa-solid fa-heart"></i> Engagement</td></tr>
+                    <tr><td>Reactions <small>Like, Love, etc.</small></td><td><input type="number" id="preReactions" class="form-input" min="0" value="0"></td><td><input type="number" id="postReactions" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Comments</td><td><input type="number" id="preComments" class="form-input" min="0" value="0"></td><td><input type="number" id="postComments" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Shares</td><td><input type="number" id="preShares" class="form-input" min="0" value="0"></td><td><input type="number" id="postShares" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Link Clicks</td><td><input type="number" id="preLinkClicks" class="form-input" min="0" value="0"></td><td><input type="number" id="postLinkClicks" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Post Saves</td><td><input type="number" id="prePostSaves" class="form-input" min="0" value="0"></td><td><input type="number" id="postPostSaves" class="form-input" min="0" value="0"></td></tr>
+
+                    <tr class="section-row"><td colspan="3"><i class="fa-solid fa-user-plus"></i> Page Growth</td></tr>
+                    <tr><td>Page Likes</td><td><input type="number" id="prePageLikes" class="form-input" min="0" value="0"></td><td><input type="number" id="postPageLikes" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Followers</td><td><input type="number" id="prePageFollowers" class="form-input" min="0" value="0"></td><td><input type="number" id="postPageFollowers" class="form-input" min="0" value="0"></td></tr>
+                    <tr><td>Profile Visits</td><td><input type="number" id="preProfileVisits" class="form-input" min="0" value="0"></td><td><input type="number" id="postProfileVisits" class="form-input" min="0" value="0"></td></tr>
+
+                    <tr class="section-row"><td colspan="3"><i class="fa-solid fa-video"></i> Video <small>(if applicable)</small></td></tr>
+                    <tr><td>Video Views</td><td><input type="number" id="preVideoViews" class="form-input" min="0" value="0"></td><td><input type="number" id="postVideoViews" class="form-input" min="0" value="0"></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- After Boost: extra fields -->
+              <div class="after-boost-extras" id="afterBoostExtras">
+                <h4 class="form-section-title"><i class="fa-solid fa-dollar-sign"></i> Budget & Cost (After Boost)</h4>
+                <div class="form-grid cols-3">
+                  <div class="form-group"><label class="form-label">Amount Spent ($)</label><input type="number" id="postAmountSpent" class="form-input" min="0" step="0.01" value="0"></div>
+                  <div class="form-group"><label class="form-label">Duration (Days)</label><input type="number" id="postDurationDays" class="form-input" min="0" value="0"></div>
+                  <div class="form-group"><label class="form-label">CTR (%)</label><input type="number" id="postCTR" class="form-input" min="0" step="0.01" value="0"><small class="form-help">Click-Through Rate</small></div>
+                  <div class="form-group"><label class="form-label">CPC ($)</label><input type="number" id="postCPC" class="form-input" min="0" step="0.01" value="0"><small class="form-help">Cost Per Click</small></div>
+                  <div class="form-group"><label class="form-label">CPM ($)</label><input type="number" id="postCPM" class="form-input" min="0" step="0.01" value="0"><small class="form-help">Cost Per 1000 Impressions</small></div>
+                  <div class="form-group"><label class="form-label">Website Visits</label><input type="number" id="postWebsiteVisits" class="form-input" min="0" value="0"></div>
+                </div>
+
+                <h4 class="form-section-title"><i class="fa-solid fa-bullseye"></i> Results</h4>
+                <div class="form-grid cols-3">
+                  <div class="form-group"><label class="form-label">Conversions</label><input type="number" id="postConversions" class="form-input" min="0" value="0"></div>
+                  <div class="form-group"><label class="form-label">Leads</label><input type="number" id="postLeads" class="form-input" min="0" value="0"></div>
+                </div>
+
+                <h4 class="form-section-title"><i class="fa-solid fa-crosshairs"></i> Targeting</h4>
+                <div class="form-grid cols-2">
+                  <div class="form-group"><label class="form-label">Target Audience</label><input type="text" id="postTargetAudience" class="form-input" placeholder="e.g., Tech enthusiasts 25-45"></div>
+                  <div class="form-group"><label class="form-label">Location</label><input type="text" id="postTargetLocation" class="form-input" placeholder="e.g., Kathmandu, Nepal"></div>
+                  <div class="form-group"><label class="form-label">Age Range</label><input type="text" id="postTargetAgeRange" class="form-input" placeholder="e.g., 18-65"></div>
+                  <div class="form-group"><label class="form-label">Gender</label>
+                    <select id="postTargetGender" class="form-select"><option value="All">All</option><option value="Male">Male</option><option value="Female">Female</option></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <button class="btn btn-outline" onclick="goToStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button class="btn btn-primary" onclick="saveAndNext(2)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Review & Save -->
+        <div class="step-content" id="step-3">
+          <div id="reportPreview"></div>
+          <div class="card-footer" style="margin-top:1rem;">
+            <button class="btn btn-outline" onclick="goToStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <div style="display:flex;gap:0.75rem;">
+              <button class="btn btn-primary" onclick="finishAndSave()"><i class="fa-solid fa-check-circle"></i> Save Report</button>
+              <button class="btn btn-success" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== REPORTS ========== -->
+      <section class="page" id="page-reports">
+        <div class="page-header"><h2>Reports</h2></div>
+        <div class="filter-bar"><select id="reportFilterClient" class="form-select"><option value="">All Clients</option></select></div>
+        <div id="reportsList" class="reports-grid"><div class="text-center text-muted" style="grid-column:1/-1;padding:3rem;">No reports yet</div></div>
+      </section>
+
+      <!-- ========== REPORT VIEW ========== -->
+      <section class="page" id="page-report-view">
+        <div class="page-header">
+          <h2>Campaign Report</h2>
+          <div><button class="btn btn-outline" onclick="navigateTo('reports')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+          <button class="btn btn-success" onclick="exportPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button></div>
+        </div>
+        <div id="reportViewContent"></div>
+      </section>
+
+      <!-- ========== TEAM / USERS (Admin only) ========== -->
+      <section class="page" id="page-users">
+        <div class="page-header"><h2>Team Members</h2><button class="btn btn-primary" onclick="showUserModal()"><i class="fa-solid fa-plus"></i> Add Member</button></div>
+        <div class="card"><div class="card-body"><div class="table-responsive">
+          <table class="table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"><tr><td colspan="5" class="text-center text-muted">Loading...</td></tr></tbody></table>
+        </div></div></div>
+      </section>
+
+      <!-- ========== ACTIVITY LOG (Admin only) ========== -->
+      <section class="page" id="page-activity">
+        <div class="page-header"><h2>Activity Log</h2></div>
+        <div class="card"><div class="card-body"><div class="table-responsive">
+          <table class="table"><thead><tr><th>User</th><th>Action</th><th>Details</th><th>Time</th></tr></thead>
+          <tbody id="activityTable"><tr><td colspan="4" class="text-center text-muted">Loading...</td></tr></tbody></table>
+        </div></div></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Client Modal -->
+  <div class="modal-overlay" id="clientModal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="clientModalTitle">Add Client</h3><button class="modal-close" onclick="closeModal('clientModal')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="clientId">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label required">Company Name</label><input type="text" id="clientCompany" class="form-input" required></div>
+          <div class="form-group"><label class="form-label required">Contact Person</label><input type="text" id="clientContact" class="form-input" required></div>
+          <div class="form-group"><label class="form-label required">Email</label><input type="email" id="clientEmail" class="form-input" required></div>
+          <div class="form-group"><label class="form-label">Phone</label><input type="tel" id="clientPhone" class="form-input"></div>
+          <div class="form-group"><label class="form-label">Industry</label>
+            <select id="clientIndustry" class="form-select"><option value="">Select</option><option>E-commerce</option><option>Technology</option><option>Healthcare</option><option>Education</option><option>Food & Beverage</option><option>Real Estate</option><option>Fashion</option><option>Travel & Tourism</option><option>Finance</option><option>Retail</option><option>Services</option><option>Other</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Website</label><input type="url" id="clientWebsite" class="form-input" placeholder="https://"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Notes</label><textarea id="clientNotes" class="form-textarea" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('clientModal')">Cancel</button><button class="btn btn-primary" onclick="saveClient()"><i class="fa-solid fa-save"></i> Save</button></div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal">
+      <div class="modal-header"><h3 id="userModalTitle">Add Team Member</h3><button class="modal-close" onclick="closeModal('userModal')">&times;</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="userId">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label required">Full Name</label><input type="text" id="userFullName" class="form-input" required></div>
+          <div class="form-group"><label class="form-label required">Email</label><input type="email" id="userEmail" class="form-input" required></div>
+          <div class="form-group"><label class="form-label" id="userPwLabel">Password</label><input type="password" id="userPassword" class="form-input" minlength="6"></div>
+          <div class="form-group"><label class="form-label">Role</label>
+            <select id="userRoleSelect" class="form-select"><option value="employee">Employee</option><option value="superadmin">Super Admin</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('userModal')">Cancel</button><button class="btn btn-primary" onclick="saveUser()"><i class="fa-solid fa-save"></i> Save</button></div>
+    </div>
+  </div>
+
+  <!-- Password Change Modal -->
+  <div class="modal-overlay" id="pwModal">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header"><h3>Change Password</h3><button class="modal-close" onclick="closeModal('pwModal')">&times;</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="currentPw" class="form-input"></div>
+        <div class="form-group"><label class="form-label">New Password</label><input type="password" id="newPw" class="form-input" minlength="6"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('pwModal')">Cancel</button><button class="btn btn-primary" onclick="changePassword()">Update</button></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
