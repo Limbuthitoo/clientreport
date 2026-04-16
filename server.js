@@ -206,9 +206,9 @@ function logActivity(userId, action, entityType, entityId, details) {
 }
 
 // Input sanitizer
-function sanitize(str) {
+function sanitize(str, maxLen = 1000) {
   if (!str) return str;
-  return String(str).replace(/[<>]/g, '').trim();
+  return String(str).slice(0, maxLen).replace(/[<>]/g, '').trim();
 }
 
 // ============ AUTH ROUTES (public) ============
@@ -221,7 +221,7 @@ app.post('/api/auth/login', rateLimit(900000, 15), (req, res) => {
   if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
 
   const token = generateToken(user);
-  res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 8 * 60 * 60 * 1000, secure: req.secure });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 8 * 60 * 60 * 1000, secure: process.env.NODE_ENV === 'production' });
   logActivity(user.id, 'login', 'user', user.id, null);
   res.json({ user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role }, token });
 });

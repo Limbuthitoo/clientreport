@@ -76,7 +76,8 @@ function showToast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast ${type}`;
   const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
-  t.innerHTML = `<i class="fa-solid ${icon}" style="color:${type==='success'?'var(--success)':type==='error'?'var(--danger)':'var(--info)'}"></i><span>${msg}</span>`;
+  const safeMsg = esc(msg);
+  t.innerHTML = `<i class="fa-solid ${icon}" style="color:${type==='success'?'var(--success)':type==='error'?'var(--danger)':'var(--info)'}"></i><span>${safeMsg}</span>`;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3500);
 }
@@ -305,7 +306,7 @@ async function saveAndNext(step) {
       ad_type:adType, objective, start_date:document.getElementById('campaignStartDate').value,
       end_date:document.getElementById('campaignEndDate').value, notes:document.getElementById('campaignNotes').value.trim() };
     if (currentCampaignId) { await api(`/campaigns/${currentCampaignId}`,'PUT',{...data,status:'draft'}); showToast('Campaign updated'); }
-    else { const r = await api('/campaigns','POST',data); currentCampaignId = r.id; showToast('Campaign created'); }
+    else { const r = await api('/campaigns','POST',data); if (!r) return; currentCampaignId = r.id; showToast('Campaign created'); }
     goToStep(2);
   } else if (step === 2) {
     // Save pre-boost
@@ -626,11 +627,28 @@ function exportPDF() {
 }
 async function exportSinglePDF(id) {
   const data = await api(`/campaigns/${id}`);
+  if (!data) return;
   const tmp = document.createElement('div');
   tmp.innerHTML = buildReport(data);
+  // Use unique IDs for chart canvases to avoid collisions
+  const suffix = '_pdf_' + Date.now();
+  tmp.querySelectorAll('canvas').forEach(c => { c.id = c.id + suffix; });
   tmp.style.cssText = 'position:absolute;left:-9999px;width:800px';
   document.body.appendChild(tmp);
-  renderCharts(data);
+  // Render charts into the tmp container's canvases
+  const { preBoost: pre, postBoost: post } = data;
+  if (pre && post) {
+    const colors = { b:'#1877F2', p:'#8B5CF6', g:'#10B981', o:'#F59E0B', pk:'#EC4899', bl:'rgba(24,119,242,0.55)', pl:'rgba(139,92,246,0.55)', gl:'rgba(16,185,129,0.45)' };
+    const barOpts = { responsive:true, maintainAspectRatio:true, animation:false, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}, scales:{y:{beginAtZero:true}} };
+    const el1 = document.getElementById('chartReach'+suffix);
+    if (el1) new Chart(el1, { type:'bar', data:{ labels:['Reach','Impressions'], datasets:[{label:'Before',data:[pre.reach,pre.impressions],backgroundColor:colors.bl,borderColor:colors.b,borderWidth:2,borderRadius:6},{label:'After',data:[post.reach,post.impressions],backgroundColor:colors.pl,borderColor:colors.p,borderWidth:2,borderRadius:6}]}, options:barOpts });
+    const el2 = document.getElementById('chartEngagement'+suffix);
+    if (el2) new Chart(el2, { type:'bar', data:{ labels:['Reactions','Comments','Shares','Clicks','Saves'], datasets:[{label:'Before',data:[pre.reactions,pre.comments,pre.shares,pre.link_clicks,pre.post_saves],backgroundColor:colors.bl,borderColor:colors.b,borderWidth:2,borderRadius:6},{label:'After',data:[post.reactions,post.comments,post.shares,post.link_clicks,post.post_saves],backgroundColor:colors.pl,borderColor:colors.p,borderWidth:2,borderRadius:6}]}, options:barOpts });
+    const el3 = document.getElementById('chartPie'+suffix);
+    if (el3) new Chart(el3, { type:'doughnut', data:{ labels:['Reactions','Comments','Shares','Clicks','Saves'], datasets:[{data:[post.reactions,post.comments,post.shares,post.link_clicks,post.post_saves],backgroundColor:[colors.b,colors.p,colors.g,colors.o,colors.pk],borderWidth:0}]}, options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}} });
+    const el4 = document.getElementById('chartGrowth'+suffix);
+    if (el4) new Chart(el4, { type:'bar', data:{ labels:['Page Likes','Followers','Profile Visits'], datasets:[{label:'Before',data:[pre.page_likes,pre.page_followers,pre.profile_visits],backgroundColor:colors.bl,borderColor:colors.b,borderWidth:2,borderRadius:6},{label:'After',data:[post.page_likes,post.page_followers,post.profile_visits],backgroundColor:colors.gl,borderColor:colors.g,borderWidth:2,borderRadius:6}]}, options:barOpts });
+  }
   await new Promise(r => setTimeout(r, 500));
   const report = tmp.querySelector('.report-view');
   showToast('Generating PDF...','info');
