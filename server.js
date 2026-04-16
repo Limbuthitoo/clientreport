@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const { JWT_SECRET } = require('./config');
 
 const app = express();
-const PORT = 3000;
+const PORT = 5173;
 
 // ============ SECURITY MIDDLEWARE ============
 app.use(express.json({ limit: '1mb' }));
@@ -221,7 +221,7 @@ app.post('/api/auth/login', rateLimit(900000, 15), (req, res) => {
   if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: 'Invalid credentials' });
 
   const token = generateToken(user);
-  res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 8 * 60 * 60 * 1000, secure: process.env.NODE_ENV === 'production' });
+  res.cookie('token', token, { httpOnly: true, sameSite: 'strict', maxAge: 8 * 60 * 60 * 1000, secure: req.secure });
   logActivity(user.id, 'login', 'user', user.id, null);
   res.json({ user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role }, token });
 });
@@ -239,7 +239,7 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 app.use('/api', authMiddleware);
 
 // Serve static files publicly (auth is handled client-side via app.js)
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0 }));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h' }));
 
 // ============ USER MANAGEMENT (admin only) ============
 app.get('/api/users', adminOnly, (req, res) => {
@@ -484,8 +484,9 @@ app.use((err, req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`MetaPulse running at http://localhost:${PORT}`);
+  console.log(`Network: http://${require('os').networkInterfaces()?.eth0?.[0]?.address || '0.0.0.0'}:${PORT}`);
 });
 
 // Graceful shutdown

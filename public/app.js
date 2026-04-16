@@ -420,7 +420,7 @@ function buildReport(data) {
       </div>
     </div>`;
 
-  // KEY RESULTS SUMMARY (easy to understand at a glance)
+  // KEY RESULTS SUMMARY
   if (hasPost) {
     html += `<div class="report-section">
       <h3 class="report-section-title"><i class="fa-solid fa-star"></i> Key Results Summary</h3>
@@ -481,17 +481,17 @@ function buildReport(data) {
     html += `<div class="report-section">
       <h3 class="report-section-title"><i class="fa-solid fa-chart-bar"></i> Visual Analytics</h3>
       <div class="chart-row">
-        <div class="chart-box"><h4>Reach & Impressions</h4><canvas id="chartReach"></canvas></div>
-        <div class="chart-box"><h4>Engagement Breakdown</h4><canvas id="chartEngagement"></canvas></div>
+        <div class="chart-box"><h4>Reach & Impressions</h4><canvas id="chartReach" width="400" height="250"></canvas></div>
+        <div class="chart-box"><h4>Engagement Breakdown</h4><canvas id="chartEngagement" width="400" height="250"></canvas></div>
       </div>
       <div class="chart-row" style="margin-top:0.75rem">
-        <div class="chart-box"><h4>Engagement Composition (After)</h4><canvas id="chartPie"></canvas></div>
-        <div class="chart-box"><h4>Page Growth</h4><canvas id="chartGrowth"></canvas></div>
+        <div class="chart-box"><h4>Engagement Composition (After)</h4><canvas id="chartPie" width="400" height="280"></canvas></div>
+        <div class="chart-box"><h4>Page Growth</h4><canvas id="chartGrowth" width="400" height="250"></canvas></div>
       </div>
     </div>`;
   }
 
-  // COST & PERFORMANCE (only for post-boost)
+  // COST & PERFORMANCE
   if (hasPost) {
     html += `<div class="report-section">
       <h3 class="report-section-title"><i class="fa-solid fa-coins"></i> Cost & Performance</h3>
@@ -547,8 +547,8 @@ function renderCharts(data) {
   if (!pre || !post) return;
   Object.values(chartInstances).forEach(c => c?.destroy());
   chartInstances = {};
-  const colors = { b:'#1877F2', p:'#8B5CF6', g:'#10B981', o:'#F59E0B', pk:'#EC4899', bl:'rgba(24,119,242,0.15)', pl:'rgba(139,92,246,0.15)' };
-  const barOpts = { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}, scales:{y:{beginAtZero:true}} };
+  const colors = { b:'#1877F2', p:'#8B5CF6', g:'#10B981', o:'#F59E0B', pk:'#EC4899', bl:'rgba(24,119,242,0.55)', pl:'rgba(139,92,246,0.55)', gl:'rgba(16,185,129,0.45)' };
+  const barOpts = { responsive:true, maintainAspectRatio:true, animation:false, plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}, scales:{y:{beginAtZero:true}} };
 
   const el1 = document.getElementById('chartReach');
   if (el1) chartInstances.r = new Chart(el1, { type:'bar', data:{ labels:['Reach','Impressions'], datasets:[
@@ -566,12 +566,12 @@ function renderCharts(data) {
   if (el3) chartInstances.p = new Chart(el3, { type:'doughnut', data:{ labels:['Reactions','Comments','Shares','Clicks','Saves'], datasets:[{
     data:[post.reactions,post.comments,post.shares,post.link_clicks,post.post_saves],
     backgroundColor:[colors.b,colors.p,colors.g,colors.o,colors.pk],borderWidth:0
-  }]}, options:{responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}} });
+  }]}, options:{responsive:true,maintainAspectRatio:true,animation:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}} });
 
   const el4 = document.getElementById('chartGrowth');
   if (el4) chartInstances.g = new Chart(el4, { type:'bar', data:{ labels:['Page Likes','Followers','Profile Visits'], datasets:[
     {label:'Before',data:[pre.page_likes,pre.page_followers,pre.profile_visits],backgroundColor:colors.bl,borderColor:colors.b,borderWidth:2,borderRadius:6},
-    {label:'After',data:[post.page_likes,post.page_followers,post.profile_visits],backgroundColor:'#D1FAE5',borderColor:colors.g,borderWidth:2,borderRadius:6}
+    {label:'After',data:[post.page_likes,post.page_followers,post.profile_visits],backgroundColor:colors.gl,borderColor:colors.g,borderWidth:2,borderRadius:6}
   ]}, options:barOpts });
 }
 
@@ -620,7 +620,7 @@ function exportPDF() {
   showToast('Generating PDF...','info');
   html2pdf().set({
     margin:[10,10,10,10], filename:'campaign-report.pdf',
-    image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true},
+    image:{type:'png',quality:1}, html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']}
   }).from(el).save().then(() => showToast('PDF exported!'));
 }
@@ -628,13 +628,15 @@ async function exportSinglePDF(id) {
   const data = await api(`/campaigns/${id}`);
   const tmp = document.createElement('div');
   tmp.innerHTML = buildReport(data);
-  tmp.style.cssText = 'position:absolute;left:-9999px';
+  tmp.style.cssText = 'position:absolute;left:-9999px;width:800px';
   document.body.appendChild(tmp);
+  renderCharts(data);
+  await new Promise(r => setTimeout(r, 500));
   const report = tmp.querySelector('.report-view');
   showToast('Generating PDF...','info');
   html2pdf().set({
     margin:[10,10,10,10], filename:`${data.campaign.campaign_name.replace(/[^a-zA-Z0-9]/g,'_')}-report.pdf`,
-    image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true},
+    image:{type:'png',quality:1}, html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff'},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}, pagebreak:{mode:['avoid-all','css','legacy']}
   }).from(report).save().then(() => { tmp.remove(); showToast('PDF exported!'); });
 }
